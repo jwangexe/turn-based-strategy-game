@@ -24,9 +24,14 @@ screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Turn-based Strategy Game")
 
 # define piece data
-piece2id = {"Empty": 0, "Inf": 1, "Cav": 2}
-id2piece = {0: "Empty", 1: "Inf", 2: "Cav"}
-id2img = {1: pygame.image.load("./Inf.png").convert(), 2: pygame.image.load("./Cav.png").convert()}
+piece2id = {"Inf-red": -1, "Cav-red": -2, "Empty": 0, "Inf-blue": 1, "Cav-blue": 2}
+id2piece = {-1: "Inf-red", -2: "Cav-red", 0: "Empty", 1: "Inf-blue", 2: "Cav-blue"}
+id2img = {
+    1: pygame.image.load("./Inf-blue.png").convert(),
+    2: pygame.image.load("./Cav-blue.png").convert(),
+    -1: pygame.image.load("./Inf-red.png").convert(),
+    -2: pygame.image.load("./Cav-red.png").convert()
+    }
 
 game_board_rows = gridheight // squaresize
 game_board_cols = gridwidth // squaresize
@@ -68,12 +73,20 @@ while True:
     if keys[pygame.K_p]:
         print(x, y)
     if x != -1 and y != -1:
-        if keys[pygame.K_0]:
-            game_board[y][x] = 0
-        if keys[pygame.K_1]:
-            game_board[y][x] = 1
-        if keys[pygame.K_2]:
-            game_board[y][x] = 2
+        if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
+            if keys[pygame.K_0]:
+                game_board[y][x] = 0
+            if keys[pygame.K_1]:
+                game_board[y][x] = -1
+            if keys[pygame.K_2]:
+                game_board[y][x] = -2
+        else:
+            if keys[pygame.K_0]:
+                game_board[y][x] = 0
+            if keys[pygame.K_1]:
+                game_board[y][x] = 1
+            if keys[pygame.K_2]:
+                game_board[y][x] = 2
     if keys[pygame.K_BACKSPACE]:
         game_board = []
         for i in range(game_board_rows):
