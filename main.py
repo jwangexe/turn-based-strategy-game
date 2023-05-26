@@ -34,10 +34,6 @@ game_board_cols = gridwidth // squaresize
 game_board = []
 for i in range(game_board_rows):
     game_board.append([0]*game_board_cols)
-#game_board = [[0]*game_board_cols]*game_board_rows
-
-game_board[0][1] = 1
-print(game_board)
 
 def draw_grid(square_size):
     for x in range(0, gridwidth+square_size, square_size):
@@ -71,7 +67,7 @@ while True:
     x, y = get_grid_pos(mouse_x, mouse_y)
     if keys[pygame.K_p]:
         print(x, y)
-    if -1 not in (x, y):
+    if x != -1 and y != -1:
         if keys[pygame.K_0]:
             game_board[y][x] = 0
         if keys[pygame.K_1]:
@@ -79,7 +75,9 @@ while True:
         if keys[pygame.K_2]:
             game_board[y][x] = 2
     if keys[pygame.K_BACKSPACE]:
-        game_board = [[0]*game_board_cols]*game_board_rows
+        game_board = []
+        for i in range(game_board_rows):
+            game_board.append([0]*game_board_cols)
   
     # Update
     
@@ -90,7 +88,6 @@ while True:
             xcoord, ycoord = x*squaresize, y*squaresize
             pieceid = game_board[y][x]
             if pieceid != 0:
-                #print("blitted piece to", x, y)
                 img = id2img[pieceid]
                 screen.blit(img, (xcoord, ycoord))
 
