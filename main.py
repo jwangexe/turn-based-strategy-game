@@ -11,6 +11,18 @@ GREEN = (0,255,0)
 BLUE = (0,0,255)
 GRID_GREEN = (0, 153, 51)
 
+class Piece:
+    def __init__(self, typenum):
+        self.idnum = typenum
+        stats = id2stats[typenum]
+        self.move, self.atk, self.hp = stats
+    
+    def harm(self, dmg):
+        self.hp -= dmg
+
+    def is_dead(self):
+        return self.hp <= 0
+
 # init pygame
 pygame.init()
 
@@ -32,6 +44,13 @@ id2img = {
     -1: pygame.image.load("./Inf-red.png").convert(),
     -2: pygame.image.load("./Cav-red.png").convert()
     }
+# (movement, attack, hp)
+id2stats = {
+    -1: (1, 1, 2),
+    -2: (2, 1, 2),
+    1: (1, 1, 2),
+    2: (2, 1, 2)
+}
 
 game_board_rows = gridheight // squaresize
 game_board_cols = gridwidth // squaresize
@@ -49,12 +68,31 @@ def draw_grid(square_size):
 def get_grid_pos(mousex, mousey):
     x = mousex // squaresize
     y = mousey // squaresize
-    if x > game_board_cols or y > game_board_rows:
+    if x >= game_board_cols or y >= game_board_rows:
         return (-1, -1)
     return (x, y)
 
 def coords_to_pos(x, y):
     return (x*squaresize, y*squaresize)
+
+def hurt(board, x, y, dmg):
+    if board[y][x] != 0:
+        board[y][x].harm(dmg)
+    return board
+
+def check_for_dead(board):
+    for y in range(len(board)):
+        for x in range(len(board[0])):
+            if board[y][x] != 0:
+                if board[y][x].is_dead():
+                    board[y][x] = 0
+    return board
+
+def move_piece(board, x, y):
+    pass
+
+def tick(board):
+    return board
 
 # Game loop
 
@@ -77,31 +115,35 @@ while True:
             if keys[pygame.K_0]:
                 game_board[y][x] = 0
             if keys[pygame.K_1]:
-                game_board[y][x] = -1
+                game_board[y][x] = Piece(-1)
             if keys[pygame.K_2]:
-                game_board[y][x] = -2
+                game_board[y][x] = Piece(-2)
         else:
             if keys[pygame.K_0]:
                 game_board[y][x] = 0
             if keys[pygame.K_1]:
-                game_board[y][x] = 1
+                game_board[y][x] = Piece(1)
             if keys[pygame.K_2]:
-                game_board[y][x] = 2
+                game_board[y][x] = Piece(2)
+    if keys[pygame.K_h]:
+        game_board = hurt(game_board, x, y, 1)
     if keys[pygame.K_BACKSPACE]:
         game_board = []
         for i in range(game_board_rows):
             game_board.append([0]*game_board_cols)
+    if keys[pygame.K_SPACE]:
+        game_board = tick(game_board)
   
     # Update
-    
+    game_board = check_for_dead(game_board)
   
     # Draw
     for y in range(0, game_board_rows):
         for x in range(0, game_board_cols):
             xcoord, ycoord = x*squaresize, y*squaresize
-            pieceid = game_board[y][x]
-            if pieceid != 0:
-                img = id2img[pieceid]
+            piece = game_board[y][x]
+            if piece != 0:
+                img = id2img[piece.idnum]
                 screen.blit(img, (xcoord, ycoord))
 
     draw_grid(squaresize)
