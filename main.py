@@ -16,6 +16,7 @@ class Piece:
         self.idnum = typenum
         stats = id2stats[typenum]
         self.move, self.atk, self.hp = stats
+        self.current_movepoints = self.move
     
     def harm(self, dmg):
         self.hp -= dmg
@@ -88,8 +89,37 @@ def check_for_dead(board):
                     board[y][x] = 0
     return board
 
-def move_piece(board, x, y):
-    pass
+def move_piece(board, x, y, movx, movy):
+    # moves the piece on board[y][x] movx steps to the right and movy steps up
+    # then returns the board afterwards
+    # movx and movy are both either 1 or 0 or -1
+    piece = board[y][x]
+    if movx == 1 and x+1 < game_board_cols:
+        target = board[y][x+1]
+        if target == 0:
+            board[y][x+1] = board[y][x]
+            board[y][x] = 0
+            x, y = x+1, y
+    elif movx == -1 and x-1 >= 0:
+        target = board[y][x-1]
+        if target == 0:
+            board[y][x-1] = board[y][x]
+            board[y][x] = 0
+            x, y = x-1, y
+    if movy == 1 and y-1 >= 0:
+        target = board[y-1][x]
+        if target == 0:
+            board[y-1][x] = board[y][x]
+            board[y][x] = 0
+            x, y = x, y-1
+    elif movy == -1 and y+1 < game_board_rows:
+        target = board[y+1][x]
+        if target == 0:
+            board[y+1][x] = board[y][x]
+            board[y][x] = 0
+            x, y = x, y+1
+    
+    return board
 
 def tick(board):
     return board
@@ -125,6 +155,15 @@ while True:
                 game_board[y][x] = Piece(1)
             if keys[pygame.K_2]:
                 game_board[y][x] = Piece(2)
+        
+        if keys[pygame.K_UP]:
+            game_board = move_piece(game_board, x, y, 0, 1)
+        if keys[pygame.K_DOWN]:
+            game_board = move_piece(game_board, x, y, 0, -1)
+        if keys[pygame.K_LEFT]:
+            game_board = move_piece(game_board, x, y, -1, 0)
+        if keys[pygame.K_RIGHT]:
+            game_board = move_piece(game_board, x, y, 1, 0)
     if keys[pygame.K_h]:
         game_board = hurt(game_board, x, y, 1)
     if keys[pygame.K_BACKSPACE]:
