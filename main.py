@@ -1,6 +1,7 @@
 import sys
 import pygame
 from pygame.locals import *
+from typing import List, Tuple
 
 # initialize color tuples
 BLACK = (0,0,0)
@@ -22,6 +23,14 @@ class Piece:
     
     def harm(self, dmg):
         self.hp -= dmg
+    
+    def get_side(self):
+        if self.idnum > 0:
+            return 1
+        elif self.idnum == 0:
+            return 0
+        else:
+            return -1
 
     def is_dead(self):
         return self.hp <= 0
@@ -64,28 +73,28 @@ game_board = []
 for i in range(game_board_rows):
     game_board.append([0]*game_board_cols)
 
-def draw_grid(square_size):
+def draw_grid(square_size: int):
     for x in range(0, gridwidth+square_size, square_size):
         pygame.draw.line(screen, GRID_GREEN, (x, 0), (x, gridheight), 1)
         for y in range(0, gridheight+square_size, square_size):
            pygame.draw.line(screen, GRID_GREEN, (0, y), (gridwidth, y))
 
-def get_grid_pos(mousex, mousey):
+def get_grid_pos(mousex: int, mousey: int):
     x = mousex // squaresize
     y = mousey // squaresize
     if x >= game_board_cols or y >= game_board_rows:
         return (-1, -1)
     return (x, y)
 
-def coords_to_pos(x, y):
+def coords_to_pos(x: int, y: int):
     return (x*squaresize, y*squaresize)
 
-def hurt(board, x, y, dmg):
+def hurt(board: List[List], x: int, y: int, dmg: int):
     if board[y][x] != 0:
         board[y][x].harm(dmg)
     return board
 
-def check_for_dead(board):
+def check_for_dead(board: List[List]):
     for y in range(len(board)):
         for x in range(len(board[0])):
             if board[y][x] != 0:
@@ -93,7 +102,7 @@ def check_for_dead(board):
                     board[y][x] = 0
     return board
 
-def move_piece(board, x, y, movx, movy):
+def move_piece(board: List[List], x: int, y: int, movx: int, movy: int):
     # moves the piece on board[y][x] movx steps to the right and movy steps up
     # then returns the board afterwards
     # movx and movy are both either 1 or 0 or -1
@@ -125,8 +134,33 @@ def move_piece(board, x, y, movx, movy):
     
     return board
 
-def tick(board):
-    return board
+def on_move_request(board: List[List], piecex: int, piecey: int, clickx: int, clicky: int):
+    possible_move = [
+        (piecex, piecey+1),
+        (piecex, piecey-1),
+        (piecex+1, piecey),
+        (piecex-1, piecey)
+    ]
+    if (clickx, clicky) not in possible_move:
+        # click outside of move possibilities
+        return board
+    if board[piecey][piecex] == 0:
+        # selected piece is an empty square
+        return board
+    target_piece = board[clicky][clickx]
+    current_piece = board[piecey][piecex]
+    if target_piece == 0:
+        # move into empty square
+        movx, movy = clickx-piecex, piecey-clicky
+        board = move_piece(board, piecex, piecey, movx, movy)
+        return board
+    elif current_piece.get_side() == target_piece.get_side():
+        # cannot move into friendly piece
+        return board
+    else:
+        # attack hostile piece
+        board = hurt(board, clickx, clicky, current_piece.atk)
+        return board
 
 # Game loop
 
@@ -146,14 +180,22 @@ while True:
     mouse_x, mouse_y = pygame.mouse.get_pos()
     x, y = get_grid_pos(mouse_x, mouse_y)
     if keys[pygame.K_p]:
+        # DEBUG: print out mouse coords
         print(x, y)
     if x != -1 and y != -1:
         if mouse_buttons[0] and pygame.time.get_ticks() >= last_select+200:
+            # prevents pygame from being too mouse-sensitive
             last_select = pygame.time.get_ticks()
             # left mouse button pressed
             if selected_piece == None:
+                # select piece
                 selected_piece = (x, y)
             elif selected_piece == (x, y):
+                # cancel piece selection
+                selected_piece = None
+            else:
+                # try to move piece/attack another piece
+                game_board = on_move_request(game_board, selected_piece[0], selected_piece[1], x, y)
                 selected_piece = None
         if selected_piece != None:
             if game_board[selected_piece[1]][selected_piece[0]] == 0:
@@ -188,8 +230,6 @@ while True:
         game_board = []
         for i in range(game_board_rows):
             game_board.append([0]*game_board_cols)
-    if keys[pygame.K_SPACE]:
-        game_board = tick(game_board)
   
     # Update
     game_board = check_for_dead(game_board)
