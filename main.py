@@ -11,6 +11,8 @@ GREEN = (0,255,0)
 BLUE = (0,0,255)
 GRID_GREEN = (0, 153, 51)
 
+selection_opacity = 64
+
 class Piece:
     def __init__(self, typenum):
         self.idnum = typenum
@@ -34,6 +36,8 @@ width, height = 640, 480
 gridwidth, gridheight = 640, 360
 squaresize = 40
 screen = pygame.display.set_mode((width, height))
+select_surface = pygame.Surface((squaresize, squaresize))
+select_surface.set_alpha(selection_opacity)
 pygame.display.set_caption("Turn-based Strategy Game")
 
 # define piece data
@@ -126,6 +130,8 @@ def tick(board):
 
 # Game loop
 
+selected_piece = None
+last_select = 0
 while True:
     screen.fill(BLACK)
   
@@ -136,11 +142,23 @@ while True:
   
     # Check keypresses
     keys = pygame.key.get_pressed()
+    mouse_buttons = pygame.mouse.get_pressed()
     mouse_x, mouse_y = pygame.mouse.get_pos()
     x, y = get_grid_pos(mouse_x, mouse_y)
     if keys[pygame.K_p]:
         print(x, y)
     if x != -1 and y != -1:
+        if mouse_buttons[0] and pygame.time.get_ticks() >= last_select+200:
+            last_select = pygame.time.get_ticks()
+            # left mouse button pressed
+            if selected_piece == None:
+                selected_piece = (x, y)
+            elif selected_piece == (x, y):
+                selected_piece = None
+        if selected_piece != None:
+            if game_board[selected_piece[1]][selected_piece[0]] == 0:
+                # if piece has moved away do not select it
+                selected_piece = None
         if keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]:
             if keys[pygame.K_0]:
                 game_board[y][x] = 0
@@ -184,6 +202,11 @@ while True:
             if piece != 0:
                 img = id2img[piece.idnum]
                 screen.blit(img, (xcoord, ycoord))
+    # draw selected piece
+    if selected_piece != None:
+        actualx, actualy = selected_piece[0]*squaresize, selected_piece[1]*squaresize
+        pygame.draw.rect(select_surface, (0, 0, 0), (0, 0, squaresize, squaresize))
+        screen.blit(select_surface, (actualx, actualy))
 
     draw_grid(squaresize)
   
